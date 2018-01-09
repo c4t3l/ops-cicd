@@ -1,0 +1,63 @@
+---
+driver:
+  name: docker
+  use_sudo: false
+  cap_add: SYS_ADMIN
+  run_command: '/usr/sbin/init'
+  
+
+platforms:
+  - name: centos7
+    driver_config:
+      image: 'houdkrdtr.eogresources.com/devops/centos7-salt:latest'
+      platform: centos
+
+provisioner:
+  name: salt_solo
+  require_chef: false
+  #formula: cicd
+  is_file_root: True
+  salt_copy_filter:
+    - .git
+    - .kitchen
+  state_top:
+    base:
+      '*':
+        - cicd
+  grains:
+    env: prod
+
+  #pillars:
+  #  top.sls:
+  #    base:
+  #      '*':
+  #        - role
+  #  role.sls:
+  #    role: general
+
+  #dependencies:
+  #  - name: yum
+  #    repo: git
+  #    source: https://ops_deploy:Hulk_2017@git.eogresources.com/oops-salt-formulas/ops-yum.git
+
+suites:
+  - name: default
+
+  #- name: other_type
+  #  provisioner:
+  #    grains:
+  #      jenkins_test: True
+  #    pillars:
+  #      top.sls:
+  #        base:
+  #          '*':
+  #            - role
+  #      role.sls:
+  #        role: other_type
+
+verifier:
+  name: shell
+  command: >
+    testinfra -vvv
+    --host="paramiko://${KITCHEN_USERNAME}@${KITCHEN_HOSTNAME}:${KITCHEN_PORT}?ssh_identity_file=${KITCHEN_SSH_KEY}"
+    --sudo test/integration/${KITCHEN_SUITE}
